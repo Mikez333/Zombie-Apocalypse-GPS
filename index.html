@@ -483,7 +483,8 @@
             zoom: 17,
             center: {lat: 50.968533, lng: -114.115257}
 	    });
-	    if(navigator.geolocation) {
+	   
+	   if(navigator.geolocation) {
 		   navigator.geolocation.watchPosition(set_my_position);
         }
 		else {
@@ -526,6 +527,7 @@
           icon: "player.png",
           map: zombie_map
         });
+		
         old_position = marker;
         for(var i=0; i < all_markers.length; i++){
             var distance = google.maps.geometry.spherical.computeDistanceBetween(pos, all_markers[i].getPosition());
