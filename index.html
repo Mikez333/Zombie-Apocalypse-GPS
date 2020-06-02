@@ -16,9 +16,11 @@
   Zombie Apocalypse GPS
   <div id="zombie_map"></div>
   <script>
-      var zombie_map;
-	  var all_markers = []
-	  var data = `50.96794140846351 -114.11502174603272 hospital.png
+    var zombie_map;
+	var health = 100;
+    var old_position;
+    var tolerance = 20;
+	var data = `50.96794140846351 -114.11502174603272 hospital.png
 50.966806295955045 -114.11300472485352 hospital.png
 50.96291427105306 -114.11991409527589 hospital.png
 50.96767114609648 -114.11618046032716 weapons.png
@@ -468,45 +470,92 @@
 50.965083225079155 -114.11496446919008 weapons.png
 50.96498187063976 -114.11499665569826 weapons.png
 50.96491430089063 -114.1150020201163 hospital.png`;
-	  var markers = data.split("\n");
-      function initMap() {
 
-              zombie_map = new google.maps.Map(document.getElementById('zombie_map'), {
-                zoom: 17,
-                center: {lat: 50.968533, lng: -114.115257}
-			  });
-			  if(navigator.geolocation) {
-				  navigator.geolocation.watchPosition(set_my_position);
-              }
-			  else {
-                  alert("Geolocation doesn't work in your browser");
-			  }
-		      for(var i=0; i < markers.length; i++){
-                document.write(markers[i] + "<br>");
-				var marker_data = markers[i].trim();
-				marker_data = marker_data.split(" ");
-				var latitude = marker_data[0];
-				var longitude = marker_data[1];
-				var emoji = marker_data[2];
-				var marker_position = new google.maps.LatLng(parseFloat(marker_data[0]), parseFloat(marker_data[1]));
-				var marker = new google.maps.Marker({
-				  position: {lat: parseFloat(latitude), lng: parseFloat(longitude) },
-				  map: zombie_map,
-				  icon: emoji
-                });
-				all_markers.push(marker);
+    // Split the data into an array of lines of data
+    var markers = data.split("\n");
+
+    // Save the locations of all markers
+    var all_markers = [];
+
+    function initMap() {
+
+        zombie_map = new google.maps.Map(document.getElementById('zombie_map'), {
+            zoom: 17,
+            center: {lat: 50.968533, lng: -114.115257}
+	    });
+	    if(navigator.geolocation) {
+		   navigator.geolocation.watchPosition(set_my_position);
+        }
+		else {
+            alert("Geolocation doesn't work in your browser");
+		}
+
+        // Add markers
+        for(var i=0; i < markers.length; i++){
+
+            // Split this marker's info into an array
+            var marker_data = markers[i].trim().split(" ");
+
+            // Create the LatLng of the marker
+            var marker_position = new google.maps.LatLng(marker_data[0], marker_data[1]);
+
+            // Create a marker at this point
+            var marker = new google.maps.Marker({
+              position: marker_position,
+              icon: marker_data[2],
+              map: zombie_map
+            });
+            // Add this marker to the list
+            all_markers.push(marker);
+        }
+
+        console.log(all_markers);
+
+        // SET YOUR OWN OLD POSITION (same as map center)
+        old_position = new google.maps.Marker({
+            position: {lat: 0, lng: 0},
+            map: zombie_map
+        })
+    }
 	
-}	}
-function set_my_position(position){
+    function set_my_position(position){
+        old_position.setMap(null);
+        var pos = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
         var marker = new google.maps.Marker({
-          position: {lat: parseFloat(position.coords.latitude), lng: parseFloat(position.coords.longitude) },
-          map: zombie_map,
-          icon: "player.png"
-                });
-}
+          position: pos,
+          icon: "player.png",
+          map: zombie_map
+        });
+        old_position = marker;
+        for(var i=0; i < all_markers.length; i++){
+            var distance = google.maps.geometry.spherical.computeDistanceBetween(pos, all_markers[i].getPosition());
+            if( distance < tolerance ){
+                var what_is_it = all_markers[i].getIcon();
+				what_is_it = what_is_it.replace(".png", "");
+				alert("Found the " + what_is_it );
+				all_markers[i].setMap(null);
+				
+
+				if( what_is_it != "zombie"){
+				  health += 30;
+				  alert("You are stronger! Your health is now " + health + "%");
+				}
+				  
+                if( what_is_it = "zombie"){
+				  health -= 50;
+				  alert("You ran into zombies ans they start attackinging you! Your health is now " + health + "%");
+				}
+				
+				if( health < 1 ){
+				  health = 100;
+				  alert("You are now dead! You ended with a health of " + health + "%. Please reload the page to start over");
+				}
+            } 
+        }
+    }
   </script>
   <script async defer
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDfwmSngE_Q_gwFG77eCD9epTbHjob-xUk&callback=initMap">
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDfwmSngE_Q_gwFG77eCD9epTbHjob-xUk&callback=initMap&libraries=geometry">
   </script>
   </body>
 </html>
